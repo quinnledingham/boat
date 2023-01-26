@@ -1,15 +1,15 @@
 function void
 mesh_setup(Mesh *mesh)
 {
-    glGenVertexArrays(1, &mesh->VAO);
-    glGenBuffers(1, &mesh->VBO);
-    glGenBuffers(1, &mesh->EBO);
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->vbo);
+    glGenBuffers(1, &mesh->ebo);
     
-    glBindVertexArray(mesh->VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
     glBufferData(GL_ARRAY_BUFFER, mesh->VerticesCount * sizeof(Vertex), &mesh->Vertices[0], GL_STATIC_DRAW);  
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->IndicesCount * sizeof(u32), &mesh->Indices[0], GL_STATIC_DRAW);
     
     // vertex positions
@@ -28,7 +28,7 @@ mesh_setup(Mesh *mesh)
 function void
 draw_mesh(Mesh *mesh)
 {
-    glBindVertexArray(mesh->VAO);
+    glBindVertexArray(mesh->vao);
     glDrawElements(GL_TRIANGLES, mesh->IndicesCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }

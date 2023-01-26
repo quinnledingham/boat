@@ -37,9 +37,9 @@ struct Mesh
     u32 *indices;
     u32 indices_count;
     
-    u32 VAO;
-    u32 VBO;
-    u32 EBO;
+    u32 vao;
+    u32 vbo;
+    u32 ebo;
 };
 
 #endif //REND_H
