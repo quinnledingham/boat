@@ -1,5 +1,5 @@
 function void
-mesh_setup(Mesh *mesh)
+opengl_setup_mesh(Mesh *mesh)
 {
     glGenVertexArrays(1, &mesh->vao);
     glGenBuffers(1, &mesh->vbo);
@@ -26,7 +26,7 @@ mesh_setup(Mesh *mesh)
 }
 
 function void
-draw_mesh(Mesh *mesh)
+opengl_draw_mesh(Mesh *mesh)
 {
     glBindVertexArray(mesh->vao);
     glDrawElements(GL_TRIANGLES, mesh->IndicesCount, GL_UNSIGNED_INT, 0);
