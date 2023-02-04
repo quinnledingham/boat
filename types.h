@@ -39,6 +39,11 @@ typedef real64 r64;
 typedef real32 f32;
 typedef real64 f64;
 
+#define function static
+#define local_persist static
+#define global_variable static
+#define array_count(n) (sizeof(n) / sizeof(n[0]))
+
 union v2
 {
     struct
@@ -88,6 +93,10 @@ union v3
 
 union v4
 {
+    struct
+    {
+        real32 x, y, z, w;
+    };
     f32 E[4];
 };
 

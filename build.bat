@@ -2,11 +2,10 @@
 
 pushd %CD%
 IF NOT EXIST build mkdir build
-pushd build
 
-set CommonCompilerFlags= -MTd -nologo -Gm- -GR- -EHa- -Od -Oi -FC -Z7 /I..\sdl-vc\include /I..\glad
-set CommonLinkerFlags= -incremental:no -opt:ref shell32.lib opengl32.lib ../sdl-vc/lib/x64/SDL2main.lib ../sdl-vc/lib/x64/SDL2.lib /subsystem:console
+set CFs= -MTd -nologo -Gm- -GR- -EHa- -Od -Oi -FC -Z7 /Isdl-vc\include /Iglad /Fobuild/main
+set LFs= -incremental:no -opt:ref shell32.lib opengl32.lib sdl-vc\lib\x64\SDL2main.lib sdl-vc\lib\x64\SDL2.lib /subsystem:console
 
-cl %CommonCompilerFlags% ..\main.cpp /link %CommonLinkerFlags% /out:Boat.exe
+cl %CFs% main.cpp /link %LFs% /out:build\Boat.exe
 
-popd
+IF NOT EXIST build\SDL2.dll copy sdl-vc\lib\x64\SDL2.dll build

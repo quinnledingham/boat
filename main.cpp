@@ -5,19 +5,32 @@
 #include <SDL.h>
 
 #include "types.h"
+#include "platform.h"
 
-#define function static
-#define local_persist static
-#define global_variable static
+//#include "log.cpp"
 
-#include "log.cpp"
+function void
+error(const char* msg)
+{
+    SDL_Log(msg);
+}
 
 #include "rend.h"
 #include "rend.cpp"
 
 struct Controller
 {
-    
+    union
+    {
+        struct
+        {
+            Button right;
+            Button up;
+            Button left;
+            Button down;
+        };
+        Button buttons[4];
+    };
 };
 
 struct Storage
@@ -26,37 +39,36 @@ struct Storage
     Shader color_shader;
 };
 
-struct Platform
+struct Application
 {
     v2s window_dim;
-    
-    Controller controllers[5];
-    
-    void *storage;
+    Controller controller;
+    Storage storage;
     
     b32 initialized;
 };
 
 function void
-do_one_frame(Platform *platform)
+initialize_storage(Storage* storage)
 {
-    Storage *storage = (Storage*)platform->storage;
-    if (!platform->initialized)
+    storage->color_shader.vs_filename = "../data/color.vs";
+    storage->color_shader.fs_filename = "../data/color.fs";
+    load_opengl_shader(&storage->color_shader);
+    init_rect_mesh(&storage->rect);
+}
+
+function void
+do_one_frame(Application *app)
+{
+    Storage *storage = &app->storage;
+    Controller *controller = &app->controller;
+    
+    if (is_down(controller->up))
     {
-        platform->storage = SDL_malloc(sizeof(Storage));
-        storage = (Storage*)platform->storage;
         
-        storage->color_shader.vs_filename = "../data/color.vs";
-        storage->color_shader.fs_filename = "../data/color.fs";
-        load_opengl_shader(&storage->color_shader);
-        
-        init_rect_mesh(&storage->rect);
-        
-        platform->initialized = true;
     }
     
-    glViewport(0, 0, platform->window_dim.Width, platform->window_dim.Height);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glViewport(0, 0, app->window_dim.Width, app->window_dim.Height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     glUseProgram(storage->color_shader.handle);
@@ -66,16 +78,24 @@ do_one_frame(Platform *platform)
     glUseProgram(0);
 }
 
-
-
 function void
 main_loop(SDL_Window *window)
 {
-    Platform platform = {};
-    SDL_GetWindowSize(window, &platform.window_dim.Width, &platform.window_dim.Height);
+    Application app = {};
+    SDL_GetWindowSize(window, &app.window_dim.Width, &app.window_dim.Height);
+    
+    
+    Controller *controller = &app.controller;
+    controller->right.id = SDLK_RIGHT;
+    controller->up.id = SDLK_UP;
+    controller->left.id = SDLK_LEFT;
+    controller->down.id = SDLK_DOWN;
     
     while(1)
     {
+        for (int i = 0; i < array_count(controller->buttons); i++)
+            controller->buttons[i].previous_state =controller->buttons[i].current_state;
+        
         SDL_Event event;
         while(SDL_PollEvent(&event))
         {
@@ -88,10 +108,29 @@ main_loop(SDL_Window *window)
                         case SDL_WINDOWEVENT_RESIZED:
                         case SDL_WINDOWEVENT_SIZE_CHANGED:
                         {
-                            platform.window_dim.Width = event.window.data1;
-                            platform.window_dim.Height = event.window.data2;
+                            app.window_dim.Width = event.window.data1;
+                            app.window_dim.Height = event.window.data2;
                         } break;
                     }
+                } break;
+                
+                case SDL_KEYDOWN:
+                case SDL_KEYUP:
+                {
+                    s32 key_id = event.key.keysym.sym;
+                    b32 state = false;
+                    if (event.key.state == SDL_PRESSED)
+                        state = true;
+                    
+                    if (key_id == controller->right.id)
+                        controller->right.current_state = state;
+                    else if (key_id == controller->up.id)
+                        controller->up.current_state = state;
+                    else if (key_id == controller->left.id)
+                        controller->left.current_state = state;
+                    else if (key_id == controller->down.id)
+                        controller->down.current_state = state;
+                    
                 } break;
                 
                 case SDL_QUIT:
@@ -101,7 +140,13 @@ main_loop(SDL_Window *window)
             }
         }
         
-        do_one_frame(&platform);
+        if (!app.initialized)
+        {
+            Storage *storage = &app.storage;
+            initialize_storage(storage);
+            app.initialized = true;
+        }
+        do_one_frame(&app);
         
         SDL_GL_SwapWindow(window);
     }
@@ -133,6 +178,7 @@ sdl_init_opengl(SDL_Window *window)
     
     // Default settings
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 int main(int argc, char* argv[])
