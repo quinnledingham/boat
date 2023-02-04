@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <glad.h>
 #include <glad.c>
 #include <SDL.h>
@@ -8,19 +10,69 @@
 #define local_persist static
 #define global_variable static
 
-global_variable SDL_Window* window;
+#include "log.cpp"
 
-function void
-do_one_frame()
+#include "rend.h"
+#include "rend.cpp"
+
+struct Controller
 {
     
-}
+};
 
-function void
-main_loop()
+struct Storage
+{
+    Mesh rect;
+    Shader color_shader;
+};
+
+struct Platform
 {
     v2s window_dim;
-    SDL_GetWindowSize(window, &window_dim.Width, &window_dim.Height);
+    
+    Controller controllers[5];
+    
+    void *storage;
+    
+    b32 initialized;
+};
+
+function void
+do_one_frame(Platform *platform)
+{
+    Storage *storage = (Storage*)platform->storage;
+    if (!platform->initialized)
+    {
+        platform->storage = SDL_malloc(sizeof(Storage));
+        storage = (Storage*)platform->storage;
+        
+        storage->color_shader.vs_filename = "../data/color.vs";
+        storage->color_shader.fs_filename = "../data/color.fs";
+        load_opengl_shader(&storage->color_shader);
+        
+        init_rect_mesh(&storage->rect);
+        
+        platform->initialized = true;
+    }
+    
+    glViewport(0, 0, platform->window_dim.Width, platform->window_dim.Height);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    
+    glUseProgram(storage->color_shader.handle);
+    v4 color = {255, 0, 0, 1};
+    glUniform4fv(glGetUniformLocation(storage->color_shader.handle, "user_color"), (GLsizei)1, (float*)&color);
+    opengl_draw_mesh(&storage->rect);
+    glUseProgram(0);
+}
+
+
+
+function void
+main_loop(SDL_Window *window)
+{
+    Platform platform = {};
+    SDL_GetWindowSize(window, &platform.window_dim.Width, &platform.window_dim.Height);
     
     while(1)
     {
@@ -29,9 +81,17 @@ main_loop()
         {
             switch(event.type)
             {
-                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT:
                 {
-                    glViewport(0, 0, event.window.data1, event.window.data2);
+                    switch(event.window.event)
+                    {
+                        case SDL_WINDOWEVENT_RESIZED:
+                        case SDL_WINDOWEVENT_SIZE_CHANGED:
+                        {
+                            platform.window_dim.Width = event.window.data1;
+                            platform.window_dim.Height = event.window.data2;
+                        } break;
+                    }
                 } break;
                 
                 case SDL_QUIT:
@@ -41,16 +101,14 @@ main_loop()
             }
         }
         
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        
-        do_one_frame();
+        do_one_frame(&platform);
         
         SDL_GL_SwapWindow(window);
     }
 }
 
 function void
-init_opengl()
+sdl_init_opengl(SDL_Window *window)
 {
     SDL_GL_LoadLibrary(NULL);
     
@@ -80,13 +138,13 @@ init_opengl()
 int main(int argc, char* argv[])
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_AUDIO);
-    window = SDL_CreateWindow("Boat", 
-                              SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-                              800, 800, 
-                              SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
     
-    init_opengl();
-    main_loop();
+    SDL_Window *window = SDL_CreateWindow("Boat", 
+                                          SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+                                          800, 800, 
+                                          SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+    sdl_init_opengl(window);
+    main_loop(window);
     
     return 0;
 }

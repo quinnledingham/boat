@@ -5,15 +5,15 @@ struct Shader_Variable
 {
     char name[20];
     u32 location;
-}
+};
 
 struct Shader
 {
-    const char *vertex_shader_filename; //.vs
-    const char *tessellation_control_shader_filename; //.tcs
-    const char *tessellation_evaluation_shader_filename; //.tes
-    const char *geometry_shader_filename; //.gs
-    const char *fragment_shader_filename; //.fs
+    const char *vs_filename; //.vs vertex_shader
+    const char *tcs_filename; //.tcs tessellation control shader
+    const char *tes_filename; //.tes tessellation evaluation shader
+    const char *gs_filename; //.gs geometry shader
+    const char *fs_filename; //.fs fragment shader
     
     b32 compiled;
     u32 handle;
@@ -22,7 +22,7 @@ struct Shader
     Shader_Variable uniforms[10];
 };
 
-struct Mesh_Vertex
+struct Vertex
 {
     v3 position;
     v3 normal;
@@ -31,7 +31,7 @@ struct Mesh_Vertex
 
 struct Mesh
 {
-    Mesh_Vertex *vertices;
+    Vertex *vertices;
     u32 vertices_count;
     
     u32 *indices;

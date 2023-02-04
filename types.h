@@ -86,4 +86,9 @@ union v3
     f32 E[3];
 };
 
+union v4
+{
+    f32 E[4];
+};
+
 #endif //TYPES_H
