@@ -149,7 +149,7 @@ load_opengl_shader(Shader *shader)
     }
     else
     {
-        error("load_opengl_shader() no vertex shader is required");
+        error("load_opengl_shader() vertex shader is required");
         return;
     }
     
@@ -197,6 +197,7 @@ load_opengl_shader(Shader *shader)
     {
         debug_opengl_program(shader->handle);
         error("load_opengl_shader() link failed");
+        return;
     }
     
     shader->compiled = true;

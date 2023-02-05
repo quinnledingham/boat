@@ -5,48 +5,11 @@
 #include <SDL.h>
 
 #include "types.h"
-#include "platform.h"
-
-//#include "log.cpp"
-
-function void
-error(const char* msg)
-{
-    SDL_Log(msg);
-}
-
 #include "rend.h"
+#include "application.h"
+
+#include "log.cpp"
 #include "rend.cpp"
-
-struct Controller
-{
-    union
-    {
-        struct
-        {
-            Button right;
-            Button up;
-            Button left;
-            Button down;
-        };
-        Button buttons[4];
-    };
-};
-
-struct Storage
-{
-    Mesh rect;
-    Shader color_shader;
-};
-
-struct Application
-{
-    v2s window_dim;
-    Controller controller;
-    Storage storage;
-    
-    b32 initialized;
-};
 
 function void
 initialize_storage(Storage* storage)
@@ -68,7 +31,6 @@ do_one_frame(Application *app)
         
     }
     
-    glViewport(0, 0, app->window_dim.Width, app->window_dim.Height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     glUseProgram(storage->color_shader.handle);
@@ -83,7 +45,6 @@ main_loop(SDL_Window *window)
 {
     Application app = {};
     SDL_GetWindowSize(window, &app.window_dim.Width, &app.window_dim.Height);
-    
     
     Controller *controller = &app.controller;
     controller->right.id = SDLK_RIGHT;
@@ -110,6 +71,7 @@ main_loop(SDL_Window *window)
                         {
                             app.window_dim.Width = event.window.data1;
                             app.window_dim.Height = event.window.data2;
+                            glViewport(0, 0, app.window_dim.Width, app.window_dim.Height);
                         } break;
                     }
                 } break;
@@ -179,11 +141,17 @@ sdl_init_opengl(SDL_Window *window)
     // Default settings
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    v2s window_dim = {};
+    SDL_GetWindowSize(window, &window_dim.Width, &window_dim.Height);
+    glViewport(0, 0, window_dim.Width, window_dim.Height);
 }
 
 int main(int argc, char* argv[])
 {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_AUDIO);
+    SDL_Init(SDL_INIT_VIDEO | 
+             SDL_INIT_GAMECONTROLLER | 
+             SDL_INIT_HAPTIC | 
+             SDL_INIT_AUDIO);
     
     SDL_Window *window = SDL_CreateWindow("Boat", 
                                           SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
