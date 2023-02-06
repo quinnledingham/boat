@@ -65,7 +65,18 @@ do_one_frame(Application *app)
     Storage *storage = &app->storage;
     Controller *controller = &app->controller;
     
-    update_camera_with_mouse(&storage->camera, controller->mouse);
+    if (on_down(controller->pause))
+        app->paused = !app->paused;
+    
+    if (!app->paused)
+    {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        update_camera_with_mouse(&storage->camera, controller->mouse);
+    }
+    else if (app->paused)
+    {
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+    }
     
     r32 aspect_ratio = (r32)app->window_dim.Width / (r32)app->window_dim.Height;
     m4x4 perspective_matrix = perspective_projection(90.0f, aspect_ratio, 0.01f, 1000.0f);
@@ -74,6 +85,9 @@ do_one_frame(Application *app)
                                storage->camera.up);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    
+    if (on_down(controller->up))
+        print_m4x4(view_matrix);
     
     glUseProgram(storage->color_shader.handle);
     v4 color = {255, 0, 0, 1};
@@ -99,6 +113,7 @@ main_loop(SDL_Window *window)
     controller->up.id = SDLK_UP;
     controller->left.id = SDLK_LEFT;
     controller->down.id = SDLK_DOWN;
+    controller->pause.id = SDLK_ESCAPE;
     
     while(1)
     {
@@ -138,15 +153,14 @@ main_loop(SDL_Window *window)
                     if (event.key.state == SDL_PRESSED)
                         state = true;
                     
-                    if (key_id == controller->right.id)
-                        controller->right.current_state = state;
-                    else if (key_id == controller->up.id)
-                        controller->up.current_state = state;
-                    else if (key_id == controller->left.id)
-                        controller->left.current_state = state;
-                    else if (key_id == controller->down.id)
-                        controller->down.current_state = state;
-                    
+                    for (int i = 0; i < array_count(controller->buttons); i++)
+                    {
+                        if (key_id == controller->buttons[i].id)
+                        {
+                            controller->buttons[i].current_state = state;
+                            break;
+                        }
+                    }
                 } break;
                 
                 case SDL_QUIT:

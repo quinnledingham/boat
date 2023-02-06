@@ -24,8 +24,9 @@ struct Controller
             Button up;
             Button left;
             Button down;
+            Button pause;
         };
-        Button buttons[4];
+        Button buttons[5];
     };
 };
 
@@ -41,6 +42,7 @@ struct Application
     v2s window_dim;
     Controller controller;
     Storage storage;
+    b32 paused;
     
     b32 initialized;
 };

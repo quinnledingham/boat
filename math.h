@@ -129,7 +129,8 @@ look_at(const v3 &position, const v3 &target, const v3 &up)
     };
 }
 
-inline m4x4 create_transform_m4x4(v3 position, v4 rotation, v3 scale)
+inline m4x4 
+create_transform_m4x4(v3 position, v4 rotation, v3 scale)
 {
     v3 x;
     v3 y;
@@ -146,6 +147,15 @@ inline m4x4 create_transform_m4x4(v3 position, v4 rotation, v3 scale)
         z.x, z.y, z.z, 0,
         position.x, position.y, position.z, 1
     };
+}
+
+inline void
+print_m4x4(m4x4 matrix)
+{
+    printf("%f %f %f %f\n", matrix.E[0][0], matrix.E[0][1], matrix.E[0][2], matrix.E[0][3]);
+    printf("%f %f %f %f\n", matrix.E[1][0], matrix.E[1][1], matrix.E[1][2], matrix.E[1][3]);
+    printf("%f %f %f %f\n", matrix.E[2][0], matrix.E[2][1], matrix.E[2][2], matrix.E[2][3]);
+    printf("%f %f %f %f\n", matrix.E[3][0], matrix.E[3][1], matrix.E[3][2], matrix.E[3][3]);
 }
 
 #endif //MATH_H
