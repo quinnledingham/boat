@@ -100,4 +100,11 @@ union v4
     f32 E[4];
 };
 
+struct m4x4
+{
+    f32 E[4][4]; // E[ROW][COLUMN]
+};
+
+
+
 #endif //TYPES_H

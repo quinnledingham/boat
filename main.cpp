@@ -5,15 +5,54 @@
 #include <SDL.h>
 
 #include "types.h"
+#include "log.h"
+#include "math.h"
 #include "rend.h"
+
+struct Camera
+{
+    v3 position;
+    v3 target;
+    v3 up;
+    real32 fov;
+    real32 yaw;
+    real32 pitch;
+};
+#define DEG2RAD 0.0174533f
+
 #include "application.h"
 
-#include "log.cpp"
 #include "rend.cpp"
+
+function void
+update_camera_with_mouse(Camera *camera, v2 mouse)
+{
+    if (mouse.x >= 3 || mouse.x <= 3)
+        camera->yaw += mouse.x / 10.0f;
+    if (mouse.y >= 3 || mouse.y <= 3)
+        camera->pitch -= mouse.y / 10.0f;
+    
+    if (camera->pitch > 89.0f)
+        camera->pitch = 89.0f;
+    if (camera->pitch < -89.0f)
+        camera->pitch = 89.0f;
+    
+    v3 camera_direction = {
+        cosf(DEG2RAD * camera->yaw) * cosf(DEG2RAD * camera->pitch),
+        sinf(DEG2RAD * camera->pitch),
+        sinf(DEG2RAD * camera->yaw) * cosf(DEG2RAD * camera->pitch)
+    };
+    camera->target = normalized(camera_direction);
+}
 
 function void
 initialize_storage(Storage* storage)
 {
+    storage->camera.position = {0, 0, 2};
+    storage->camera.up = {0, 1, 0};
+    storage->camera.target = {0, 0, -2};
+    storage->camera.yaw = -90.0f;
+    
     storage->color_shader.vs_filename = "../data/color.vs";
     storage->color_shader.fs_filename = "../data/color.fs";
     load_opengl_shader(&storage->color_shader);
@@ -26,16 +65,24 @@ do_one_frame(Application *app)
     Storage *storage = &app->storage;
     Controller *controller = &app->controller;
     
-    if (is_down(controller->up))
-    {
-        
-    }
+    update_camera_with_mouse(&storage->camera, controller->mouse);
+    
+    r32 aspect_ratio = (r32)app->window_dim.Width / (r32)app->window_dim.Height;
+    m4x4 perspective_matrix = perspective_projection(90.0f, aspect_ratio, 0.01f, 1000.0f);
+    m4x4 view_matrix = look_at(storage->camera.position, 
+                               storage->camera.position + storage->camera.target,
+                               storage->camera.up);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     glUseProgram(storage->color_shader.handle);
     v4 color = {255, 0, 0, 1};
+    m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {100, 100, 100});
     glUniform4fv(glGetUniformLocation(storage->color_shader.handle, "user_color"), (GLsizei)1, (float*)&color);
+    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "model"), (GLsizei)1, false, (float*)&model);
+    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
+    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "view"), (GLsizei)1, false, (float*)&view_matrix);
+    
     opengl_draw_mesh(&storage->rect);
     glUseProgram(0);
 }
@@ -45,6 +92,7 @@ main_loop(SDL_Window *window)
 {
     Application app = {};
     SDL_GetWindowSize(window, &app.window_dim.Width, &app.window_dim.Height);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
     
     Controller *controller = &app.controller;
     controller->right.id = SDLK_RIGHT;
@@ -74,6 +122,12 @@ main_loop(SDL_Window *window)
                             glViewport(0, 0, app.window_dim.Width, app.window_dim.Height);
                         } break;
                     }
+                } break;
+                
+                case SDL_MOUSEMOTION:
+                {
+                    controller->mouse.x = event.motion.xrel;
+                    controller->mouse.y = event.motion.yrel;
                 } break;
                 
                 case SDL_KEYDOWN:
