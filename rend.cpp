@@ -93,8 +93,6 @@ load_shader_file(const char* filename)
 function bool
 compile_opengl_shader(Shader* shader, int type)
 {
-    b32 compiled = false;
-    
     const char *file = 0;
     switch (type)
     {
@@ -106,9 +104,12 @@ compile_opengl_shader(Shader* shader, int type)
         default:
         {
             error("compile_opengl_shader() not a type of shader");
-            return compiled;
+            return false;
         } break;
     }
+    if (file == 0)
+        return false;
+    
     u32 s = glCreateShader(type);
     glShaderSource(s, 1, &file, NULL);
     glCompileShader(s);
@@ -116,18 +117,13 @@ compile_opengl_shader(Shader* shader, int type)
     GLint compiled_s = 0;
     glGetShaderiv(s, GL_COMPILE_STATUS, &compiled_s);
     if (!compiled_s)
-    {
         debug_opengl_shader(s);
-    }
     else
-    {
         glAttachShader(shader->handle, s);
-        compiled = true;
-    }
     
     glDeleteShader(s);
     free((void*)file);
-    return compiled;
+    return compiled_s;
 }
 
 function void
@@ -239,11 +235,11 @@ opengl_draw_mesh(Mesh *mesh)
 }
 
 function void
-create_rect_indices(u32 *indices, 
-                    u32 top_left, 
-                    u32 top_right,
-                    u32 bottom_left,
-                    u32 bottom_right)
+init_rect_indices(u32 *indices, 
+                  u32 top_left, 
+                  u32 top_right,
+                  u32 bottom_left,
+                  u32 bottom_right)
 {
     indices[0] = top_left;
     indices[1] = bottom_left;
@@ -265,7 +261,13 @@ init_rect_mesh(Mesh *rect)
     
     rect->indices_count = 6;
     rect->indices = (u32*)SDL_malloc(sizeof(u32) * rect->indices_count);
-    create_rect_indices(rect->indices, 1, 3, 0, 2);
+    init_rect_indices(rect->indices, 1, 3, 0, 2);
     
     opengl_setup_mesh(rect);
+}
+
+function inline m4x4
+get_view(Camera camera)
+{
+    return look_at(camera.position, camera.position + camera.target, camera.up);
 }

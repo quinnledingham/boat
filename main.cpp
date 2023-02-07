@@ -8,41 +8,10 @@
 #include "log.h"
 #include "math.h"
 #include "rend.h"
-
-struct Camera
-{
-    v3 position;
-    v3 target;
-    v3 up;
-    real32 fov;
-    real32 yaw;
-    real32 pitch;
-};
-
+#include "input.h"
 #include "application.h"
 
 #include "rend.cpp"
-
-function void
-update_camera_with_mouse(Camera *camera, v2s mouse)
-{
-    if (mouse.x > 1 || mouse.x < -1)
-        camera->yaw += (f32)mouse.x * 0.1f;
-    if (mouse.y > 1 || mouse.y < -1)
-        camera->pitch -= (f32)mouse.y * 0.1f;
-    
-    if (camera->pitch > 89.0f)
-        camera->pitch = 89.0f;
-    if (camera->pitch < -89.0f)
-        camera->pitch = -89.0f;
-    
-    v3 camera_direction = {
-        cosf(DEG2RAD * camera->yaw) * cosf(DEG2RAD * camera->pitch),
-        sinf(DEG2RAD * camera->pitch),
-        sinf(DEG2RAD * camera->yaw) * cosf(DEG2RAD * camera->pitch)
-    };
-    camera->target = normalized(camera_direction);
-}
 
 function void
 initialize_storage(Storage* storage)
@@ -82,17 +51,20 @@ do_one_frame(Application *app)
         SDL_SetRelativeMouseMode(SDL_FALSE);
     }
     
+    //
+    // Draw
+    //
+    
     r32 aspect_ratio = (r32)app->window_dim.Width / (r32)app->window_dim.Height;
     m4x4 perspective_matrix = perspective_projection(90.0f, aspect_ratio, 0.01f, 1000.0f);
-    m4x4 orthographic_matrix = orthographic_projection(0.0f, (r32)app->window_dim.Width, (r32)app->window_dim.Height,
+    m4x4 orthographic_matrix = orthographic_projection(0.0f, 
+                                                       (r32)app->window_dim.Width, (r32)app->window_dim.Height,
                                                        0.0f, -3.0f, 3.0f);
-    m4x4 view_matrix = look_at(storage->camera.position, 
-                               storage->camera.position + storage->camera.target,
-                               storage->camera.up);
+    m4x4 view_matrix = get_view(storage->camera);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
-    if (on_down(controller->up))
+    if (on_down(controller->forward))
     {
         print_m4x4(perspective_matrix);
     }
@@ -129,10 +101,10 @@ main_loop(SDL_Window *window)
     SDL_SetRelativeMouseMode(SDL_TRUE);
     
     Controller *controller = &app.controller;
-    controller->right.id = SDLK_RIGHT;
-    controller->up.id = SDLK_UP;
-    controller->left.id = SDLK_LEFT;
-    controller->down.id = SDLK_DOWN;
+    controller->right.id = SDLK_d;
+    controller->forward.id = SDLK_w;
+    controller->left.id = SDLK_a;
+    controller->backward.id = SDLK_s;
     controller->pause.id = SDLK_ESCAPE;
     
     while(1)

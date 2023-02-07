@@ -86,7 +86,7 @@ normalized(const v3 &v)
 }
 
 inline m4x4
-get_frustum(real32 l, real32 r, real32 b, real32 t, real32 n, real32 f)
+get_frustum(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)
 {
     if (l == r || t == b || n == f)
     {

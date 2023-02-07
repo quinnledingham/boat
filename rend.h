@@ -1,6 +1,16 @@
 #ifndef REND_H
 #define REND_H
 
+struct Camera
+{
+    v3 position;
+    v3 target;
+    v3 up;
+    real32 fov;
+    real32 yaw;
+    real32 pitch;
+};
+
 struct Shader_Variable
 {
     char name[20];
