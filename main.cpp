@@ -18,24 +18,23 @@ struct Camera
     real32 yaw;
     real32 pitch;
 };
-#define DEG2RAD 0.0174533f
 
 #include "application.h"
 
 #include "rend.cpp"
 
 function void
-update_camera_with_mouse(Camera *camera, v2 mouse)
+update_camera_with_mouse(Camera *camera, v2s mouse)
 {
-    if (mouse.x >= 3 || mouse.x <= 3)
-        camera->yaw += mouse.x / 10.0f;
-    if (mouse.y >= 3 || mouse.y <= 3)
-        camera->pitch -= mouse.y / 10.0f;
+    if (mouse.x > 1 || mouse.x < -1)
+        camera->yaw += (f32)mouse.x * 0.1f;
+    if (mouse.y > 1 || mouse.y < -1)
+        camera->pitch -= (f32)mouse.y * 0.1f;
     
     if (camera->pitch > 89.0f)
         camera->pitch = 89.0f;
     if (camera->pitch < -89.0f)
-        camera->pitch = 89.0f;
+        camera->pitch = -89.0f;
     
     v3 camera_direction = {
         cosf(DEG2RAD * camera->yaw) * cosf(DEG2RAD * camera->pitch),
@@ -53,9 +52,14 @@ initialize_storage(Storage* storage)
     storage->camera.target = {0, 0, -2};
     storage->camera.yaw = -90.0f;
     
-    storage->color_shader.vs_filename = "../data/color.vs";
-    storage->color_shader.fs_filename = "../data/color.fs";
-    load_opengl_shader(&storage->color_shader);
+    storage->color_2D.vs_filename = "../data/color2D.vs";
+    storage->color_2D.fs_filename = "../data/color.fs";
+    load_opengl_shader(&storage->color_2D);
+    
+    storage->color_3D.vs_filename = "../data/color3D.vs";
+    storage->color_3D.fs_filename = "../data/color.fs";
+    load_opengl_shader(&storage->color_3D);
+    
     init_rect_mesh(&storage->rect);
 }
 
@@ -80,6 +84,8 @@ do_one_frame(Application *app)
     
     r32 aspect_ratio = (r32)app->window_dim.Width / (r32)app->window_dim.Height;
     m4x4 perspective_matrix = perspective_projection(90.0f, aspect_ratio, 0.01f, 1000.0f);
+    m4x4 orthographic_matrix = orthographic_projection(0.0f, (r32)app->window_dim.Width, (r32)app->window_dim.Height,
+                                                       0.0f, -3.0f, 3.0f);
     m4x4 view_matrix = look_at(storage->camera.position, 
                                storage->camera.position + storage->camera.target,
                                storage->camera.up);
@@ -87,18 +93,32 @@ do_one_frame(Application *app)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     if (on_down(controller->up))
-        print_m4x4(view_matrix);
+    {
+        print_m4x4(perspective_matrix);
+    }
     
-    glUseProgram(storage->color_shader.handle);
+    u32 active_shader = use_shader(&storage->color_3D);
     v4 color = {255, 0, 0, 1};
-    m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {100, 100, 100});
-    glUniform4fv(glGetUniformLocation(storage->color_shader.handle, "user_color"), (GLsizei)1, (float*)&color);
-    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "model"), (GLsizei)1, false, (float*)&model);
-    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
-    glUniformMatrix4fv(glGetUniformLocation(storage->color_shader.handle, "view"), (GLsizei)1, false, (float*)&view_matrix);
-    
+    m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {1, 1, 1});
+    glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
+    glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
+    glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
+    glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
     opengl_draw_mesh(&storage->rect);
     glUseProgram(0);
+    
+    if (app->paused)
+    {
+        u32 active_shader = use_shader(&storage->color_2D);
+        v4 color = {0, 0, 0, 0.7};
+        m4x4 model = create_transform_m4x4({0, 0, 0}, 
+                                           {}, {(f32)app->window_dim.Width, (f32)app->window_dim.Height, 1});
+        glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&orthographic_matrix);
+        opengl_draw_mesh(&storage->rect);
+        glUseProgram(0);
+    }
 }
 
 function void
@@ -209,6 +229,7 @@ sdl_init_opengl(SDL_Window *window)
     // Default settings
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
     v2s window_dim = {};
     SDL_GetWindowSize(window, &window_dim.Width, &window_dim.Height);
     glViewport(0, 0, window_dim.Width, window_dim.Height);

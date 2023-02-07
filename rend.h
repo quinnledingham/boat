@@ -22,6 +22,13 @@ struct Shader
     Shader_Variable uniforms[10];
 };
 
+inline u32
+use_shader(Shader *shader)
+{
+    glUseProgram(shader->handle);
+    return shader->handle;
+}
+
 struct Vertex
 {
     v3 position;

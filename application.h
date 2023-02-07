@@ -14,7 +14,7 @@ struct Button
 
 struct Controller
 {
-    v2 mouse;
+    v2s mouse;
     
     union
     {
@@ -33,7 +33,8 @@ struct Controller
 struct Storage
 {
     Mesh rect;
-    Shader color_shader;
+    Shader color_2D;
+    Shader color_3D;
     Camera camera;
 };
 

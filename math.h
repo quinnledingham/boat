@@ -60,7 +60,8 @@ length_squared(const v3 &v)
 inline void
 normalize(v3 &v)
 {
-    if (real32 len_sq = length_squared(v) < V3_EPSILON)
+    real32 len_sq = length_squared(v);
+    if (len_sq < V3_EPSILON)
         return;
     else
     {
@@ -74,7 +75,8 @@ normalize(v3 &v)
 inline v3
 normalized(const v3 &v)
 {
-    if (real32 len_sq = length_squared(v) < V3_EPSILON)
+    real32 len_sq = length_squared(v);
+    if (len_sq < V3_EPSILON)
         return v;
     else
     {
@@ -110,6 +112,23 @@ perspective_projection(real32 fov, real32 aspect_ratio, real32 n, real32 f)
 }
 
 inline m4x4
+orthographic_projection(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)
+{
+    if (l == r || t == b || n == f)
+    {
+        error("orthographic_projection() Invalid arguments");
+        return {};
+    }
+    return
+    {
+        2.0f / (r - l), 0, 0, 0,
+        0, 2.0f / (t - b), 0, 0,
+        0, 0, -2.0f / (f - n), 0,
+        -((r+l)/(r-l)),-((t+b)/(t-b)),-((f+n)/(f-n)), 1
+    };
+}
+
+inline m4x4
 look_at(const v3 &position, const v3 &target, const v3 &up)
 {
     v3 f = normalized(target - position) * -1.0f;
@@ -132,9 +151,9 @@ look_at(const v3 &position, const v3 &target, const v3 &up)
 inline m4x4 
 create_transform_m4x4(v3 position, v4 rotation, v3 scale)
 {
-    v3 x;
-    v3 y;
-    v3 z;
+    v3 x = {1, 0, 0};
+    v3 y = {0, 1, 0};
+    v3 z = {0, 0, 1};
     
     x = x * scale.x;
     y = y * scale.y;
@@ -152,10 +171,14 @@ create_transform_m4x4(v3 position, v4 rotation, v3 scale)
 inline void
 print_m4x4(m4x4 matrix)
 {
-    printf("%f %f %f %f\n", matrix.E[0][0], matrix.E[0][1], matrix.E[0][2], matrix.E[0][3]);
-    printf("%f %f %f %f\n", matrix.E[1][0], matrix.E[1][1], matrix.E[1][2], matrix.E[1][3]);
-    printf("%f %f %f %f\n", matrix.E[2][0], matrix.E[2][1], matrix.E[2][2], matrix.E[2][3]);
-    printf("%f %f %f %f\n", matrix.E[3][0], matrix.E[3][1], matrix.E[3][2], matrix.E[3][3]);
+    for (int i = 0; i < 16; i++)
+    {
+        s32 row = i / 4;
+        s32 column = i - (row * 4);
+        printf("%f ", matrix.E[row][column]);
+        if ((i + 1) % 4 == 0)
+            printf("\n");
+    }
 }
 
 #endif //MATH_H
