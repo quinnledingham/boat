@@ -13,10 +13,32 @@ operator+(const v3 &l, const v3 &r)
     return {l.x + r.x, l.y + r.y, l.z + r.z};
 }
 
+inline void
+operator+=(v3 &l, const v3 &r)
+{
+    l.x = l.x + r.x;
+    l.y = l.y + r.y;
+    l.z = l.z + r.z;
+}
+
 inline v3
 operator-(const v3 &l, const v3 &r)
 {
     return {l.x - r.x, l.y - r.y, l.z - r.z};
+}
+
+inline void
+operator-=(v3 &l, const v3 &r)
+{
+    l.x = l.x - r.x;
+    l.y = l.y - r.y;
+    l.z = l.z - r.z;
+}
+
+inline v3
+operator*(const v3 &l, const v3 &r)
+{
+    return {l.x * r.x, l.y * r.y, l.z * r.z};
 }
 
 inline v3

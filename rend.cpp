@@ -137,6 +137,7 @@ load_opengl_shader(Shader *shader)
     
     if (shader->vs_filename != 0) // Vertex Shader
     {
+        SDL_Log("Loading shader %s\n", shader->vs_filename);
         if (!compile_opengl_shader(shader, GL_VERTEX_SHADER))
         {
             error("load_opengl_shader() compiling vertex shader failed");

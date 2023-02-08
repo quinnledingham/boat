@@ -53,4 +53,28 @@ update_camera_with_mouse(Camera *camera, v2s delta_mouse)
     camera->target = normalized(camera_direction);
 }
 
+function void
+update_camera_with_keys(Camera *camera,
+                        v3 move_vector,
+                        Button forward,
+                        Button backward,
+                        Button left,
+                        Button right,
+                        Button up,
+                        Button down)
+{
+    if (is_down(forward))
+        camera->position += camera->target * move_vector;
+    if (is_down(backward))
+        camera->position -= camera->target * move_vector;
+    if (is_down(left))
+        camera->position -= normalized(cross_product(camera->target, camera->up)) * move_vector;
+    if (is_down(right))
+        camera->position += normalized(cross_product(camera->target, camera->up)) * move_vector;
+    if (is_down(up))
+        camera->position.y += move_vector.y;
+    if (is_down(down))
+        camera->position.y -= move_vector.y;
+}
+
 #endif //INPUT_H

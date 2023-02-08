@@ -11,6 +11,12 @@ struct Camera
     real32 pitch;
 };
 
+struct Light_Source
+{
+    v3 position;
+    v3 color;
+};
+
 struct Shader_Variable
 {
     char name[20];
