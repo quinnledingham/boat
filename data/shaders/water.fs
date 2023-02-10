@@ -1,10 +1,9 @@
 #version 410 core
 
-in vec3 frag_normal;
+in vec4 frag_normal;
 in vec3 frag_tangent;
 in vec3 frag_bitangent;
-
-in vec3 frag_position;
+in vec4 frag_position;
 in vec2 uv;
 
 uniform vec3 lightPos;
@@ -23,23 +22,24 @@ void main()
 	//normal = (normal) * 2.0 - 1.0;
 	//normal = normalize(normal);
 
-	vec3 normal = frag_normal;
+	vec3 normal = normalize(frag_normal.xyz);
+	//vec3 normal = vec3(0, 1, 0);
 
 	//vec4 tex = texture(normal_map, uv);
 
 	// ambient
-	float ambientStrength = 0.5f;
+	float ambientStrength = 0.1f;
 	vec3 ambient = ambientStrength * lightColor;
-	//vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
 
 	// diffuse
-	vec3 lightDir =  normalize((TBN * lightPos) - (TBN * frag_position));
+	//vec3 lightDir = normalize((TBN * lightPos) - (TBN * frag_position));
+    vec3 lightDir = normalize(lightPos - frag_position.xyz);
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = diff * lightColor;
 
 	// secular
 	float specular_strength = 0.5;
-	vec3 view_dir = TBN * normalize(cameraPos - frag_position);
+	vec3 view_dir = TBN * normalize(cameraPos - frag_position.xyz);
 	vec3 reflect_dir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
 	vec3 specular = specular_strength * spec * lightColor;

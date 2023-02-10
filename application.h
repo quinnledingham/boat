@@ -17,8 +17,9 @@ struct Controller
             Button down;
             Button pause;
             Button reload_shaders;
+            Button toggle_wireframe;
         };
-        Button buttons[8];
+        Button buttons[9];
     };
 };
 
@@ -40,6 +41,8 @@ struct Application
     Storage storage;
     
     b32 paused;
+    b32 wireframe;
+    f32 s_elapsed;
     f32 s_elapsed_frame;
     
     b32 initialized;

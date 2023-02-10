@@ -8,6 +8,6 @@ out vec2 tex_coords;
 
 void main()
 {
+	gl_Position = vec4(position, 1.0);
 	tex_coords = texture_coords;
-	gl_position = vec4(position, 1.0);
 }

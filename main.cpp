@@ -71,15 +71,15 @@ make_square_mesh_into_patches(Mesh *mesh, u32 u, u32 v)
 {
     Mesh new_mesh = {};
     
-    new_mesh.vertices_count = mesh->vertices_count * 4;
+    new_mesh.vertices_count = u * v * 4;
     new_mesh.vertices = (Vertex*)SDL_malloc(sizeof(Vertex) * new_mesh.vertices_count);
     
     u32 vertex_count = 0;
-    for (u32 i = 0; i < (u); i++)
+    for (u32 i = 0; i < u; i++)
     {
-        u32 p1 = i * v;
-        u32 p2 = p1 + v;
-        for (u32 j = 0; j < (v); j++, p1++, p2++)
+        u32 p1 = i * (v + 1);
+        u32 p2 = p1 + (v + 1);
+        for (u32 j = 0; j < v; j++, p1++, p2++)
         {
             new_mesh.vertices[vertex_count++] = mesh->vertices[p1];
             new_mesh.vertices[vertex_count++] = mesh->vertices[p1 + 1];
@@ -111,17 +111,18 @@ initialize_storage(Storage* storage)
     storage->water_shader.vs_filename = "../data/shaders/water.vs";
     storage->water_shader.tcs_filename = "../data/shaders/water.tcs";
     storage->water_shader.tes_filename = "../data/shaders/water.tes";
-    storage->water_shader.gs_filename = "../data/shaders/water.gs";
-    storage->water_shader.vs_filename = "../data/shaders/water.fs";
+    //storage->water_shader.gs_filename = "../data/shaders/water.gs";
+    storage->water_shader.fs_filename = "../data/shaders/water.fs";
     load_opengl_shader(&storage->water_shader);
     
-    storage->ls_1.position = {0.0f, 10.0f, 0.0f};
+    storage->ls_1.position = {0.0f, 5.0f, 0.0f};
     storage->ls_1.color = {1, 1, 1};
     
     init_rect_mesh(&storage->rect);
     
     Mesh temp_square_mesh = create_square_mesh(3, 3);
-    Mesh temp_patch_mesh = make_square_mesh_into_patches(&temp_square_mesh, 2, 2);
+    Mesh temp_patch_mesh = make_square_mesh_into_patches(&temp_square_mesh, 3, 3);
+    //storage->water = temp_square_mesh;
     storage->water = temp_patch_mesh;
     //free_mesh(&temp_square_mesh);
     //free_mesh(&temp_patch_mesh);
@@ -176,8 +177,20 @@ do_one_frame(Application *app)
                                                        0.0f, -3.0f, 3.0f);
     m4x4 view_matrix = get_view(storage->camera);
     
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
+    
+    if (on_down(controller->toggle_wireframe))
+    {
+        app->wireframe = !app->wireframe;
+        
+        if (app->wireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else if (!app->wireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+    
     {
         u32 active_shader = use_shader(&storage->color_3D);
         v4 color = {255, 0, 0, 1};
@@ -188,15 +201,16 @@ do_one_frame(Application *app)
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
         opengl_draw_mesh(&storage->rect);
     }
+    
     {
         u32 active_shader = use_shader(&storage->water_shader);
-        v4 color = {0, 0, 255, 1};
-        glUniform4fv(glGetUniformLocation(active_shader, "objectColor"), (GLsizei)1, (float*)&color);
-        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {4, 1, 4});
+        v4 color = {0, 0, 1, 1};
+        glUniform3fv(glGetUniformLocation(active_shader, "objectColor"), (GLsizei)1, (float*)&color);
+        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {10, 1, 10});
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
-        glUniform1f(glGetUniformLocation(active_shader, "time"), app->s_elapsed_frame);
+        glUniform1f(glGetUniformLocation(active_shader, "time"), app->s_elapsed);
         glUniform3fv(glGetUniformLocation(active_shader, "lightPos"), (GLsizei)1, (float*)&storage->ls_1.position);
         glUniform3fv(glGetUniformLocation(active_shader, "lightColor"), (GLsizei)1, (float*)&storage->ls_1.color);
         glUniform3fv(glGetUniformLocation(active_shader, "cameraPos"), (GLsizei)1, (float*)&storage->camera.position);
@@ -204,12 +218,27 @@ do_one_frame(Application *app)
         glBindVertexArray(storage->water.vao);
         glDrawArrays(GL_PATCHES, 0, storage->water.vertices_count);
         glBindVertexArray(0);
-        
-        opengl_draw_mesh(&storage->water);
     }
     
+    /*
+    {
+        u32 active_shader = use_shader(&storage->color_3D);
+        v4 color = {0, 255, 0, 1};
+        glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
+        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {1, 1, 1});
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
+        //opengl_draw_mesh(&storage->water);
+        glBindVertexArray(storage->water.vao);
+        glDrawArrays(GL_POINTS, 0, storage->water.vertices_count);
+        glBindVertexArray(0);
+    }
+    */
     if (app->paused)
     {
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
         u32 active_shader = use_shader(&storage->color_2D);
         v4 color = {0, 0, 0, 0.7};
         m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {(f32)app->window_dim.Width, (f32)app->window_dim.Height, 1});
@@ -242,6 +271,7 @@ main_loop(SDL_Window *window)
     controller->down.id = SDLK_LSHIFT;
     controller->pause.id = SDLK_ESCAPE;
     controller->reload_shaders.id = SDLK_r;
+    controller->toggle_wireframe.id = SDLK_t;
     
     uint32 last_ms_elapsed = 0;
     
@@ -307,7 +337,10 @@ main_loop(SDL_Window *window)
             app.initialized = true;
         }
         
+        //return;
+        
         uint32 ms_elapsed = SDL_GetTicks();
+        app.s_elapsed = (f32)ms_elapsed / 1000.0f;
         uint32 ms_elapsed_frame = ms_elapsed - last_ms_elapsed;
         app.s_elapsed_frame = (f32)ms_elapsed_frame / 1000.0f;
         last_ms_elapsed = ms_elapsed;
@@ -346,6 +379,15 @@ sdl_init_opengl(SDL_Window *window)
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
+    glPointSize(5.0f);
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+    
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(opengl_debug_message_callback, 0);
+    
     v2s window_dim = {};
     SDL_GetWindowSize(window, &window_dim.Width, &window_dim.Height);
     glViewport(0, 0, window_dim.Width, window_dim.Height);

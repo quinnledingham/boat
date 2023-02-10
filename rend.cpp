@@ -110,7 +110,7 @@ compile_opengl_shader(Shader* shader, int type)
     if (file == 0)
         return false;
     
-    u32 s = glCreateShader(type);
+    u32 s = glCreateShader((GLenum)type);
     glShaderSource(s, 1, &file, NULL);
     glCompileShader(s);
     
@@ -133,7 +133,6 @@ load_opengl_shader(Shader *shader)
     if (shader->handle != 0)
         glDeleteProgram(shader->handle);
     shader->handle = glCreateProgram();
-    glUseProgram(shader->handle);
     
     if (shader->vs_filename != 0) // Vertex Shader
     {
