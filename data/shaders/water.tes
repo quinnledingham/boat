@@ -1,7 +1,6 @@
 #version 410 core
 layout(quads, fractional_odd_spacing, ccw) in;
 
-//uniform sampler2D heightMap;
 uniform mat4 model;
 uniform mat4 projection;
 uniform mat4 view;
@@ -35,6 +34,25 @@ vec3 apply_wave(vec3 pos, vec4 wave, float time)
 				d.y * (a * cos(f)));
 }
 
+// wave = (direction.x, direction.y, wave_length, steepness)
+vec4 apply_wave(vec4 pos, vec4 wave, float time)
+{
+	vec2 direction = wave.xy;
+	float wave_length = wave.z;
+	float steepness = wave.w;
+
+	float k = 2 * PI / wave_length;
+	float c = sqrt(9.8 / k);
+	vec2 d = normalize(direction);
+	float f = k * (dot(d, pos.xz) - c * time);
+	float a = steepness / k;
+
+	return vec4(d.x * (a * cos(f)),
+				a * sin(f),
+				d.y * (a * cos(f)),
+				0);
+}
+
 void main()
 {
     float u = gl_TessCoord.x;
@@ -50,7 +68,6 @@ void main()
     vec2 texCoord = (t1 - t0) * v + t0;
 
 	uvs = texCoord;
-	float Height = 0.0;
 
     vec4 p00 = gl_in[0].gl_Position;
     vec4 p01 = gl_in[1].gl_Position;
@@ -63,14 +80,14 @@ void main()
 
     vec4 p0 = (p01 - p00) * u + p00;
     vec4 p1 = (p11 - p10) * u + p10;
-    vec4 p = (p1 - p0) * v + p0 + normal * Height;
+    vec4 p = (p1 - p0) * v + p0 + normal;
 
 	vec4 pos = model * p;
-	
-	vec3 const_pos = pos.xyz;
+
+	vec3 const_pos = pos.xyz;   
 	pos.xyz += apply_wave(const_pos, vec4(1.0, 0.0, 2.0, 0.5), time / 5.0);
 
 	frag_position = pos;
-	frag_normal = vec4(0, 1, 0, 1);
+	frag_normal = -normal;
 	gl_Position = projection * view * pos;
 }

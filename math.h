@@ -1,6 +1,7 @@
 #ifndef MATH_H
 #define MATH_H
 
+#define V2_EPSILON 0.000001f
 #define V3_EPSILON 0.000001f
 #define MAT4_EPSILON 0.000001f
 #define QUAT_EPSILON 0.000001f
@@ -57,6 +58,12 @@ operator==(const v3 &v, float f)
 }
 
 inline f32
+dot_product(const v2 &l, const v2 &r)
+{
+    return (l.x * r.x) + (l.y * r.y);
+}
+
+inline f32
 dot_product(const v3 &l, const v3 &r)
 {
     return (l.x * r.x) + (l.y * r.y) + (l.z * r.z);
@@ -71,6 +78,12 @@ cross_product(const v3 &l, const v3 &r)
         (l.z * r.x - l.x * r.z),
         (l.x * r.y - l.y * r.x)
     };
+}
+
+inline real32
+length_squared(const v2 &v)
+{
+    return (v.x * v.x) + (v.y * v.y);
 }
 
 inline real32
@@ -91,6 +104,19 @@ normalize(v3 &v)
         v.x *= inverse_length;
         v.y *= inverse_length;
         v.z *= inverse_length;
+    }
+}
+
+inline v2
+normalized(const v2 &v)
+{
+    real32 len_sq = length_squared(v);
+    if (len_sq < V2_EPSILON)
+        return v;
+    else
+    {
+        real32 inverse_length = 1.0f / sqrtf(len_sq);
+        return {v.x * inverse_length, v.y * inverse_length };
     }
 }
 

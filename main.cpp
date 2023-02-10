@@ -36,7 +36,7 @@ create_square_mesh(uint32 u, uint32 v)
     {
         for (u32 j = 0; j < (v + 1); j++, t += 2)
         {
-            v3 vertex_pos = { (f32(i) * du) - 1.0f, 0.0f, (f32(j) * dv) - 1.0f };
+            v3 vertex_pos = { (f32(i) * du) - 1.0f, (f32)-1, (f32(j) * dv) - 1.0f };
             v2 tex_coords = { (f32)i, (f32)j };
             Vertex vertex = { vertex_pos, {0, 1, 0}, tex_coords };
             result.vertices[vertex_count++] = vertex;
@@ -90,6 +90,26 @@ make_square_mesh_into_patches(Mesh *mesh, u32 u, u32 v)
     
     opengl_setup_mesh(&new_mesh);
     return new_mesh;
+}
+
+function v3
+apply_wave(v3 pos, v4 wave, f32 time)
+{
+    v2 direction = { wave.x, wave.y };
+    f32 wave_length = wave.z;
+    f32 steepness = wave.w;
+    
+    f32 k = 2 * PI / wave_length;
+    f32 c = sqrt(9.8 / k);
+    v2 d = normalized(direction);
+    f32 f = k * (dot_product(d, { pos.x, pos.z }) - c * time);
+    f32 a = steepness / k;
+    
+    return {
+        d.x * (a * cosf(f)),
+        a * sin(f),
+        d.y * (a * cos(f))
+    };
 }
 
 function void
