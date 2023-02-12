@@ -2,16 +2,12 @@
 layout(quads, fractional_odd_spacing, ccw) in;
 
 uniform mat4 model;
-uniform mat4 projection;
-uniform mat4 view;
+//uniform mat4 projection;
+//uniform mat4 view;
 uniform float time;
 
 in vec2 TextureCoord[];
 
-out vec4 frag_normal;
-out vec3 frag_tangent;
-out vec3 frag_bitangent;
-out vec4 frag_position;
 out vec2 uvs;
 
 #define PI 3.14159265359f
@@ -80,14 +76,13 @@ void main()
 
     vec4 p0 = (p01 - p00) * u + p00;
     vec4 p1 = (p11 - p10) * u + p10;
-    vec4 p = (p1 - p0) * v + p0 + normal;
+    vec4 p = (p1 - p0) * v + p0 + -normal * 1;
 
 	vec4 pos = model * p;
 
 	vec3 const_pos = pos.xyz;   
-	pos.xyz += apply_wave(const_pos, vec4(1.0, 0.0, 2.0, 0.5), time / 5.0);
+	pos.xyz += apply_wave(const_pos, vec4(1.0, 0.0, 2.0, 0.1), time / 5.0);
+	pos.xyz += apply_wave(const_pos, vec4(1.0, 1.0, 6.0, 0.1), time / 5.0);
 
-	frag_position = pos;
-	frag_normal = -normal;
-	gl_Position = projection * view * pos;
+	gl_Position = pos;
 }

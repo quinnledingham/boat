@@ -97,8 +97,14 @@ union v4
     {
         real32 x, y, z, w;
     };
+    struct
+    {
+        v3 vector;
+        f32 scalar;
+    };
     f32 E[4];
 };
+typedef v4 quat;
 
 struct m4x4
 {

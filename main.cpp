@@ -107,8 +107,8 @@ apply_wave(v3 pos, v4 wave, f32 time)
     
     return {
         d.x * (a * cosf(f)),
-        a * sin(f),
-        d.y * (a * cos(f))
+        a * sinf(f),
+        d.y * (a * cosf(f))
     };
 }
 
@@ -131,7 +131,7 @@ initialize_storage(Storage* storage)
     storage->water_shader.vs_filename = "../data/shaders/water.vs";
     storage->water_shader.tcs_filename = "../data/shaders/water.tcs";
     storage->water_shader.tes_filename = "../data/shaders/water.tes";
-    //storage->water_shader.gs_filename = "../data/shaders/water.gs";
+    storage->water_shader.gs_filename = "../data/shaders/water.gs";
     storage->water_shader.fs_filename = "../data/shaders/water.fs";
     load_opengl_shader(&storage->water_shader);
     
@@ -140,8 +140,8 @@ initialize_storage(Storage* storage)
     
     init_rect_mesh(&storage->rect);
     
-    Mesh temp_square_mesh = create_square_mesh(3, 3);
-    Mesh temp_patch_mesh = make_square_mesh_into_patches(&temp_square_mesh, 3, 3);
+    Mesh temp_square_mesh = create_square_mesh(10, 10);
+    Mesh temp_patch_mesh = make_square_mesh_into_patches(&temp_square_mesh, 10, 10);
     //storage->water = temp_square_mesh;
     storage->water = temp_patch_mesh;
     //free_mesh(&temp_square_mesh);
@@ -211,11 +211,25 @@ do_one_frame(Application *app)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
     
+    // Light
+    {
+        u32 active_shader = use_shader(&storage->color_3D);
+        v4 color = {255, 255, 0, 1};
+        glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
+        m4x4 model = create_transform_m4x4(storage->ls_1.position, 
+                                           get_rotation_to_direction(storage->camera.position - storage->ls_1.position, storage->camera.up),
+                                           {0.25f, 0.25f, 0.25f});
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
+        glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
+        opengl_draw_mesh(&storage->rect);
+    }
+    
     {
         u32 active_shader = use_shader(&storage->color_3D);
         v4 color = {255, 0, 0, 1};
         glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
-        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {1, 1, 1});
+        m4x4 model = create_transform_m4x4({0, 0, 0}, get_rotation(0, {1, 0, 0}), {1, 1, 1});
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
@@ -224,9 +238,9 @@ do_one_frame(Application *app)
     
     {
         u32 active_shader = use_shader(&storage->water_shader);
-        v4 color = {0, 0, 1, 1};
-        glUniform3fv(glGetUniformLocation(active_shader, "objectColor"), (GLsizei)1, (float*)&color);
-        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {10, 1, 10});
+        v4 color = {166.0f/255.0f, 250.0f/255.0f, 255.0f/255.0f, 0.9};
+        glUniform4fv(glGetUniformLocation(active_shader, "objectColor"), (GLsizei)1, (float*)&color);
+        m4x4 model = create_transform_m4x4({0, 0, 0}, get_rotation(0, {1, 0, 0}), {20, 1, 20});
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&perspective_matrix);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "view"), (GLsizei)1, false, (float*)&view_matrix);
@@ -261,7 +275,7 @@ do_one_frame(Application *app)
         glDisable(GL_CULL_FACE);
         u32 active_shader = use_shader(&storage->color_2D);
         v4 color = {0, 0, 0, 0.7};
-        m4x4 model = create_transform_m4x4({0, 0, 0}, {}, {(f32)app->window_dim.Width, (f32)app->window_dim.Height, 1});
+        m4x4 model = create_transform_m4x4({0, 0, 0}, get_rotation(0, {1, 0, 0}), {(f32)app->window_dim.Width, (f32)app->window_dim.Height, 1});
         glUniform4fv(glGetUniformLocation(active_shader, "user_color"), (GLsizei)1, (float*)&color);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "model"), (GLsizei)1, false, (float*)&model);
         glUniformMatrix4fv(glGetUniformLocation(active_shader, "projection"), (GLsizei)1, false, (float*)&orthographic_matrix);
