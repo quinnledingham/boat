@@ -72,7 +72,7 @@ operator*(const v3 &v, float f)
     return {v.x * f, v.y * f, v.z * f};
 }
 
-inline v3
+inline void
 operator*=(v3 &l, v3 &r)
 {
     l.x *= r.x;

@@ -309,6 +309,8 @@ main_loop(SDL_Window *window)
     
     uint32 last_ms_elapsed = 0;
     
+    initialize_storage(&app.storage);
+    
     while(1)
     {
         for (int i = 0; i < array_count(controller->buttons); i++)
@@ -363,15 +365,6 @@ main_loop(SDL_Window *window)
                 } break;
             }
         }
-        
-        if (!app.initialized)
-        {
-            Storage *storage = &app.storage;
-            initialize_storage(storage);
-            app.initialized = true;
-        }
-        
-        //return;
         
         uint32 ms_elapsed = SDL_GetTicks();
         app.s_elapsed = (f32)ms_elapsed / 1000.0f;
