@@ -326,7 +326,25 @@ main_loop(SDL_Window *window)
     SDL_GetWindowSize(window, &app.window_dim.Width, &app.window_dim.Height);
     init_app(&app);
     
+<<<<<<< HEAD
     u32 last_frame_run_time_ms = 0;
+=======
+    Controller *controller = &app.controller;
+    controller->right.id = SDLK_d;
+    controller->forward.id = SDLK_w;
+    controller->left.id = SDLK_a;
+    controller->backward.id = SDLK_s;
+    controller->up.id = SDLK_SPACE;
+    controller->down.id = SDLK_LSHIFT;
+    controller->pause.id = SDLK_ESCAPE;
+    controller->reload_shaders.id = SDLK_r;
+    controller->toggle_wireframe.id = SDLK_t;
+    
+    uint32 last_ms_elapsed = 0;
+    
+    initialize_storage(&app.storage);
+    
+>>>>>>> 76d1b90f2d12f1b9e5faf2b03bcb4771f3b4bca7
     while(1)
     {
         Controller *controller = &app.controller;
@@ -384,11 +402,19 @@ main_loop(SDL_Window *window)
             }
         }
         
+<<<<<<< HEAD
         u32 run_time_ms = SDL_GetTicks();
         app.run_time_s = (f32)run_time_ms / 1000.0f;
         u32 frame_time_ms = run_time_ms - last_frame_run_time_ms;
         app.frame_time_s = (f32)frame_time_ms / 1000.0f;
         last_frame_run_time_ms = run_time_ms;
+=======
+        uint32 ms_elapsed = SDL_GetTicks();
+        app.s_elapsed = (f32)ms_elapsed / 1000.0f;
+        uint32 ms_elapsed_frame = ms_elapsed - last_ms_elapsed;
+        app.s_elapsed_frame = (f32)ms_elapsed_frame / 1000.0f;
+        last_ms_elapsed = ms_elapsed;
+>>>>>>> 76d1b90f2d12f1b9e5faf2b03bcb4771f3b4bca7
         
         do_one_frame(&app);
         

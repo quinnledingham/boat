@@ -75,6 +75,81 @@ cross_product(const v3 &l, const v3 &r)
     };
 }
 
+<<<<<<< HEAD
+=======
+inline v3
+operator+(const v3 &l, const v3 &r)
+{
+    return {l.x + r.x, l.y + r.y, l.z + r.z};
+}
+
+inline void
+operator+=(v3 &l, const v3 &r)
+{
+    l.x = l.x + r.x;
+    l.y = l.y + r.y;
+    l.z = l.z + r.z;
+}
+
+inline v3
+operator-(const v3 &l, const v3 &r)
+{
+    return {l.x - r.x, l.y - r.y, l.z - r.z};
+}
+
+inline void
+operator-=(v3 &l, const v3 &r)
+{
+    l.x = l.x - r.x;
+    l.y = l.y - r.y;
+    l.z = l.z - r.z;
+}
+
+inline v3
+operator*(const v3 &l, const v3 &r)
+{
+    return {l.x * r.x, l.y * r.y, l.z * r.z};
+}
+
+inline v3
+operator*(const v3 &v, float f)
+{
+    return {v.x * f, v.y * f, v.z * f};
+}
+
+inline void
+operator*=(v3 &l, v3 &r)
+{
+    l.x *= r.x;
+    l.y *= r.y;
+    l.z *= r.z;
+}
+
+v3 operator*(const quat& q, const v3& v)
+{
+    return q.vector * 2.0f * dot_product(q.vector, v) + 
+        v * (q.scalar * q.scalar - dot_product(q.vector, q.vector)) +
+        cross_product(q.vector, v) * 2.0f * q.scalar;
+}
+
+inline v4
+operator*(const v4 &l, const v4 &r)
+{
+    return { l.x * r.x, l.y * r.y, l.z * r.z, l.w * r.w };
+}
+
+inline quat
+quat_multiply(const quat &l, const quat &r)
+{
+    return {
+        r.x * l.w + r.y * l.z - r.z * l.y + r.w * l.x,
+        -r.x * l.z + r.y * l.w + r.z * l.x + r.w * l.y,
+        r.x * l.y - r.y * l.x + r.z * l.w + r.w * l.z,
+        -r.x * l.x - r.y * l.y - r.z * l.z + r.w * l.w
+    };
+}
+
+>>>>>>> 76d1b90f2d12f1b9e5faf2b03bcb4771f3b4bca7
 inline bool
 operator==(const v3 &l, const v3 &r)
 {
