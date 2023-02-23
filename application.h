@@ -23,15 +23,21 @@ struct Controller
     };
 };
 
+enum Asset_Tags
+{
+    COLOR_RECT_2D,
+    COLOR_RECT_3D,
+    TEXTURE_RECT_2D,
+    WATER,
+};
+
 struct Storage
 {
     Mesh rect;
     Mesh water;
-    Shader color_2D;
-    Shader color_3D;
-    Shader water_shader;
     Camera camera;
     Light_Source ls_1;
+    b32 paused;
 };
 
 struct Application
@@ -39,13 +45,13 @@ struct Application
     v2s window_dim;
     Controller controller;
     Storage storage;
+    Assets assets;
     
-    b32 paused;
-    b32 wireframe;
-    f32 s_elapsed;
-    f32 s_elapsed_frame;
+    Bool wireframe;
+    Bool relative_mouse_mode;
     
-    b32 initialized;
+    f32 run_time_s;
+    f32 frame_time_s;
 };
 
 #endif //APPLICATION_H

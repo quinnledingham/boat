@@ -2,23 +2,66 @@
 #define MATH_H
 
 #define V2_EPSILON 0.000001f
-#define V3_EPSILON 0.000001f
-#define V4_EPSILON 0.000001f
-#define MAT4_EPSILON 0.000001f
-#define QUAT_EPSILON 0.000001f
+#define V3_EPSILON V2_EPSILON
+#define V4_EPSILON V2_EPSILON
+#define MAT4_EPSILON V2_EPSILON
+#define QUAT_EPSILON V2_EPSILON
 #define DEG2RAD 0.0174533f
 #define PI 3.14159265359f
 
-inline f32
-dot_product(const v2 &l, const v2 &r)
+// v2
+inline v2 operator+(const v2 &l, const v2 &r) { return { l.x + r.x, l.y + r.y }; }
+inline f32 dot_product(const v2 &l, const v2 &r) { return (l.x * r.x) + (l.y * r.y); }
+inline f32 length_squared(const v2 &v) { return (v.x * v.x) + (v.y * v.y); }
+inline v2 cv2(const v2s &o) { return { (f32)o.x, (f32)o.y }; }
+
+inline v2
+normalized(const v2 &v)
 {
-    return (l.x * r.x) + (l.y * r.y);
+    real32 len_sq = length_squared(v);
+    if (len_sq < V2_EPSILON)
+        return v;
+    else
+    {
+        real32 inverse_length = 1.0f / sqrtf(len_sq);
+        return {v.x * inverse_length, v.y * inverse_length };
+    }
 }
 
-inline f32
-dot_product(const v3 &l, const v3 &r)
+// v3
+inline v3 operator+(const v3 &l, const v3 &r) { return {l.x + r.x, l.y + r.y, l.z + r.z }; }
+inline v3 operator-(const v3 &l, const v3 &r) { return {l.x - r.x, l.y - r.y, l.z - r.z}; }
+inline v3 operator*(const v3 &l, const v3 &r) { return {l.x * r.x, l.y * r.y, l.z * r.z}; }
+inline v3 operator*(const v3 &v, float f) { return {v.x * f, v.y * f, v.z * f}; }
+inline f32 dot_product(const v3 &l, const v3 &r) { return (l.x * r.x) + (l.y * r.y) + (l.z * r.z); }
+inline real32 length_squared(const v3 &v) { return (v.x * v.x) + (v.y * v.y) + (v.z * v.z); }
+
+inline void
+normalize(v3 &v)
 {
-    return (l.x * r.x) + (l.y * r.y) + (l.z * r.z);
+    real32 len_sq = length_squared(v);
+    if (len_sq < V3_EPSILON)
+        return;
+    else
+    {
+        real32 inverse_length = 1.0f / sqrtf(len_sq);
+        v.x *= inverse_length;
+        v.y *= inverse_length;
+        v.z *= inverse_length;
+    }
+}
+
+inline v3
+normalized(const v3 &v)
+{
+    real32 len_sq = length_squared(v);
+    if (len_sq < V3_EPSILON)
+        return v;
+    else
+    {
+        real32 inverse_length = 1.0f / sqrtf(len_sq);
+        return {v.x * inverse_length, v.y * inverse_length, v.z * inverse_length};
+    }
 }
 
 inline v3
@@ -29,78 +72,6 @@ cross_product(const v3 &l, const v3 &r)
         (l.y * r.z - l.z * r.y),
         (l.z * r.x - l.x * r.z),
         (l.x * r.y - l.y * r.x)
-    };
-}
-
-inline v3
-operator+(const v3 &l, const v3 &r)
-{
-    return {l.x + r.x, l.y + r.y, l.z + r.z};
-}
-
-inline void
-operator+=(v3 &l, const v3 &r)
-{
-    l.x = l.x + r.x;
-    l.y = l.y + r.y;
-    l.z = l.z + r.z;
-}
-
-inline v3
-operator-(const v3 &l, const v3 &r)
-{
-    return {l.x - r.x, l.y - r.y, l.z - r.z};
-}
-
-inline void
-operator-=(v3 &l, const v3 &r)
-{
-    l.x = l.x - r.x;
-    l.y = l.y - r.y;
-    l.z = l.z - r.z;
-}
-
-inline v3
-operator*(const v3 &l, const v3 &r)
-{
-    return {l.x * r.x, l.y * r.y, l.z * r.z};
-}
-
-inline v3
-operator*(const v3 &v, float f)
-{
-    return {v.x * f, v.y * f, v.z * f};
-}
-
-inline v3
-operator*=(v3 &l, v3 &r)
-{
-    l.x *= r.x;
-    l.y *= r.y;
-    l.z *= r.z;
-}
-
-v3 operator*(const quat& q, const v3& v)
-{
-    return q.vector * 2.0f * dot_product(q.vector, v) + 
-        v * (q.scalar * q.scalar - dot_product(q.vector, q.vector)) +
-        cross_product(q.vector, v) * 2.0f * q.scalar;
-}
-
-inline v4
-operator*(const v4 &l, const v4 &r)
-{
-    return { l.x * r.x, l.y * r.y, l.z * r.z, l.w * r.w };
-}
-
-inline quat
-quat_multiply(const quat &l, const quat &r)
-{
-    return {
-        r.x * l.w + r.y * l.z - r.z * l.y + r.w * l.x,
-        -r.x * l.z + r.y * l.w + r.z * l.x + r.w * l.y,
-        r.x * l.y - r.y * l.x + r.z * l.w + r.w * l.z,
-        -r.x * l.x - r.y * l.y - r.z * l.z + r.w * l.w
     };
 }
 
@@ -122,70 +93,70 @@ operator==(const v3 &v, float f)
         return false;
 }
 
-inline real32
-length_squared(const v2 &v)
+inline void
+operator+=(v3 &l, const v3 &r)
 {
-    return (v.x * v.x) + (v.y * v.y);
-}
-
-inline real32
-length_squared(const v3 &v)
-{
-    return (v.x * v.x) + (v.y * v.y) + (v.z * v.z);
-}
-
-inline real32
-length_squared(const v4 &v)
-{
-    return v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
+    l.x = l.x + r.x;
+    l.y = l.y + r.y;
+    l.z = l.z + r.z;
 }
 
 inline void
-normalize(v3 &v)
+operator-=(v3 &l, const v3 &r)
 {
-    real32 len_sq = length_squared(v);
-    if (len_sq < V3_EPSILON)
-        return;
-    else
-    {
-        real32 inverse_length = 1.0f / sqrtf(len_sq);
-        v.x *= inverse_length;
-        v.y *= inverse_length;
-        v.z *= inverse_length;
-    }
+    l.x = l.x - r.x;
+    l.y = l.y - r.y;
+    l.z = l.z - r.z;
 }
 
-inline v2
-normalized(const v2 &v)
+inline void
+operator*=(v3 &l, v3 &r)
 {
-    real32 len_sq = length_squared(v);
-    if (len_sq < V2_EPSILON)
-        return v;
-    else
-    {
-        real32 inverse_length = 1.0f / sqrtf(len_sq);
-        return {v.x * inverse_length, v.y * inverse_length };
-    }
+    l.x *= r.x;
+    l.y *= r.y;
+    l.z *= r.z;
 }
 
-inline v3
-normalized(const v3 &v)
+// v4
+inline v4 operator*(const v4 &l, const v4 &r) { return { l.x * r.x, l.y * r.y, l.z * r.z, l.w * r.w }; }
+inline f32 length_squared(const v4 &v) { return v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w; }
+
+inline bool
+operator==(const v4 &l, const v4 &r)
 {
-    real32 len_sq = length_squared(v);
-    if (len_sq < V3_EPSILON)
-        return v;
+    if (l.x == r.x, l.y == r.y, l.z == r.z, l.w == r.w)
+        return true;
     else
-    {
-        real32 inverse_length = 1.0f / sqrtf(len_sq);
-        return {v.x * inverse_length, v.y * inverse_length, v.z * inverse_length};
-    }
+        return false;
 }
 
-inline v4
-normalized(const v4 &v)
+// quat
+inline f32 length_squared(const quat &v) { return v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w; }
+
+inline quat 
+operator*(const quat &l, const quat &r) 
+{
+    return {
+        r.x * l.w + r.y * l.z - r.z * l.y + r.w * l.x,
+        -r.x * l.z + r.y * l.w + r.z * l.x + r.w * l.y,
+        r.x * l.y - r.y * l.x + r.z * l.w + r.w * l.z,
+        -r.x * l.x - r.y * l.y - r.z * l.z + r.w * l.w
+    };
+}
+
+inline v3 
+operator*(const quat& q, const v3& v)
+{
+    return q.vector * 2.0f * dot_product(q.vector, v) + 
+        v * (q.scalar * q.scalar - dot_product(q.vector, q.vector)) +
+        cross_product(q.vector, v) * 2.0f * q.scalar;
+}
+
+inline quat
+normalized(const quat &v)
 {
     real32 len_sq = length_squared(v);
-    if (len_sq < V4_EPSILON)
+    if (len_sq < QUAT_EPSILON)
         return { 0, 0, 0, 1 };
     else
     {
@@ -194,6 +165,7 @@ normalized(const v4 &v)
     }
 }
 
+// m4x4
 inline m4x4
 get_frustum(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)
 {
@@ -315,7 +287,8 @@ print_m4x4(m4x4 matrix)
 
 // Returns a quat which contains the rotation between two vectors.
 // The two vectors are treated like they are points in the same sphere.
-v4 from_to(const v3& from, const v3& to)
+function quat
+from_to(const v3& from, const v3& to)
 {
     v3 f = normalized(from);
     v3 t = normalized(to);
@@ -338,7 +311,8 @@ v4 from_to(const v3& from, const v3& to)
     return { axis.x, axis.y, axis.z, dot_product(f, half) };
 }
 
-v4 get_rotation_to_direction(const v3& direction, const v3& up)
+function quat 
+get_rotation_to_direction(const v3& direction, const v3& up)
 {
     // Find orthonormal basis vectors
     v3 forward = normalized(direction);
@@ -346,11 +320,11 @@ v4 get_rotation_to_direction(const v3& direction, const v3& up)
     v3 right = cross_product(norm_up, forward);
     norm_up = cross_product(forward, right);
     
-    v4 world_to_object = from_to({ 0, 0, 1 }, forward); // From world forward to object forward
+    quat world_to_object = from_to({ 0, 0, 1 }, forward); // From world forward to object forward
     v3 object_up = { 0, 1, 0 };
     object_up = world_to_object * object_up; // What direction is the new object up?
-    v4 u_to_u = from_to(object_up, norm_up); // From object up to desired up
-    v4 result = quat_multiply(world_to_object, u_to_u); // Rotate to forward direction then twist to correct up
+    quat u_to_u = from_to(object_up, norm_up); // From object up to desired up
+    quat result = world_to_object * u_to_u; // Rotate to forward direction then twist to correct up
     
     return normalized(result);
 }

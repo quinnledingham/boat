@@ -10,17 +10,12 @@ struct Camera
     real32 yaw;
     real32 pitch;
 };
+function inline m4x4 get_view(Camera camera) { return look_at(camera.position, camera.position + camera.target, camera.up); }
 
 struct Light_Source
 {
     v3 position;
     v3 color;
-};
-
-struct Shader_Variable
-{
-    char name[20];
-    u32 location;
 };
 
 struct Shader
@@ -33,9 +28,6 @@ struct Shader
     
     b32 compiled;
     u32 handle;
-    
-    Shader_Variable attributes[10];
-    Shader_Variable uniforms[10];
 };
 
 inline u32
@@ -64,5 +56,11 @@ struct Mesh
     u32 vbo;
     u32 ebo;
 };
+
+//
+// Rect
+//
+
+
 
 #endif //REND_H

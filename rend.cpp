@@ -1,3 +1,7 @@
+//
+// OpenGL Debug
+//
+
 void GLAPIENTRY
 opengl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
                               GLsizei length, const GLchar* message, const void* userParam )
@@ -6,67 +10,45 @@ opengl_debug_message_callback(GLenum source, GLenum type, GLuint id, GLenum seve
     SDL_Log("message: %s\n", message);
     switch (type)
     {
-        case GL_DEBUG_TYPE_ERROR:
-        SDL_Log("type: ERROR");
-        break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        SDL_Log("type: DEPRECATED_BEHAVIOR");
-        break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        SDL_Log("type: UNDEFINED_BEHAVIOR");
-        break;
-        case GL_DEBUG_TYPE_PORTABILITY:
-        SDL_Log("type: PORTABILITY");
-        break;
-        case GL_DEBUG_TYPE_PERFORMANCE:
-        SDL_Log("type: PERFORMANCE");
-        break;
-        case GL_DEBUG_TYPE_OTHER:
-        SDL_Log("type: OTHER");
-        break;
+        case GL_DEBUG_TYPE_ERROR: SDL_Log("type: ERROR"); break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: SDL_Log("type: DEPRECATED_BEHAVIOR"); break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: SDL_Log("type: UNDEFINED_BEHAVIOR"); break;
+        case GL_DEBUG_TYPE_PORTABILITY: SDL_Log("type: PORTABILITY"); break;
+        case GL_DEBUG_TYPE_PERFORMANCE: SDL_Log("type: PERFORMANCE"); break;
+        case GL_DEBUG_TYPE_OTHER: SDL_Log("type: OTHER"); break;
     }
     SDL_Log("id: %d", id);
     switch(severity)
     {
-        case GL_DEBUG_SEVERITY_LOW:
-        SDL_Log("severity: LOW\n");
-        break;
-        case GL_DEBUG_SEVERITY_MEDIUM:
-        SDL_Log("severity: MEDIUM\n");
-        break;
-        case GL_DEBUG_SEVERITY_HIGH:
-        SDL_Log("severity: HIGH\n");
-        break;
+        case GL_DEBUG_SEVERITY_LOW: SDL_Log("severity: LOW\n"); break;
+        case GL_DEBUG_SEVERITY_MEDIUM: SDL_Log("severity: MEDIUM\n"); break;
+        case GL_DEBUG_SEVERITY_HIGH: SDL_Log("severity: HIGH\n"); break;
     }
 }
 
 function void
-debug_opengl_shader(u32 id)
+debug_opengl(u32 type, u32 id)
 {
     GLint length;
     glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
     if (length > 0)
     {
-        GLchar infoLog[512];
-        GLint size; //gives 0 when checked in debugger
-        glGetShaderInfoLog(id, 512, &size, infoLog);
-        SDL_Log("%s", infoLog);
+        GLchar info_log[512];
+        GLint size;
+        
+        switch(type)
+        {
+            case GL_SHADER: glGetShaderInfoLog(id, 512, &size, info_log); break;
+            case GL_PROGRAM: glGetProgramInfoLog(id, 512, &size, info_log); break;
+        }
+        
+        log(info_log);
     }
 }
 
-function void
-debug_opengl_program(u32 id)
-{
-    GLint length;
-    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
-    if (length > 0)
-    {
-        GLchar infoLog[512];
-        GLint size; //gives 0 when checked in debugger
-        glGetProgramInfoLog(id, 512, &size, infoLog);
-        SDL_Log("%s", infoLog);
-    }
-}
+//
+// Shader
+//
 
 function const char*
 load_shader_file(const char* filename)
@@ -91,38 +73,26 @@ load_shader_file(const char* filename)
 }
 
 function bool
-compile_opengl_shader(Shader* shader, int type)
+compile_opengl_shader(u32 handle, const char *filename, int type)
 {
-    const char *file = 0;
-    switch (type)
-    {
-        case GL_VERTEX_SHADER: file = load_shader_file(shader->vs_filename); break;
-        case GL_TESS_CONTROL_SHADER: file = load_shader_file(shader->tcs_filename); break;
-        case GL_TESS_EVALUATION_SHADER: file = load_shader_file(shader->tes_filename); break;
-        case GL_GEOMETRY_SHADER: file = load_shader_file(shader->gs_filename); break;
-        case GL_FRAGMENT_SHADER: file = load_shader_file(shader->fs_filename); break;
-        default:
-        {
-            error("compile_opengl_shader() not a type of shader");
-            return false;
-        } break;
-    }
+    const char *file = load_shader_file(filename);
     if (file == 0)
         return false;
     
-    u32 s = glCreateShader((GLenum)type);
+    u32 s =  glCreateShader((GLenum)type);
     glShaderSource(s, 1, &file, NULL);
     glCompileShader(s);
     
     GLint compiled_s = 0;
     glGetShaderiv(s, GL_COMPILE_STATUS, &compiled_s);
     if (!compiled_s)
-        debug_opengl_shader(s);
+        debug_opengl(GL_SHADER, s);
     else
-        glAttachShader(shader->handle, s);
+        glAttachShader(handle, s);
     
     glDeleteShader(s);
     free((void*)file);
+    
     return compiled_s;
 }
 
@@ -134,55 +104,32 @@ load_opengl_shader(Shader *shader)
         glDeleteProgram(shader->handle);
     shader->handle = glCreateProgram();
     
-    if (shader->vs_filename != 0) // Vertex Shader
+    
+    if (!compile_opengl_shader(shader->handle, shader->vs_filename, GL_VERTEX_SHADER))
     {
-        SDL_Log("Loading shader %s\n", shader->vs_filename);
-        if (!compile_opengl_shader(shader, GL_VERTEX_SHADER))
-        {
-            error("load_opengl_shader() compiling vertex shader failed");
-            return;
-        }
-    }
-    else
-    {
-        error("load_opengl_shader() vertex shader is required");
+        printf("vs: %s\n", shader->vs_filename);
+        error("load_opengl_shader() compiling vertex shader failed");
         return;
     }
-    
-    if (shader->tcs_filename != 0) // Tessellation Control Shader
+    if (shader->tcs_filename != 0)
     {
-        if (!compile_opengl_shader(shader, GL_TESS_CONTROL_SHADER))
-        {
-            error("load_opengl_shader() compiling tessellation control shader failed");
-            return;
-        }
+        if (!compile_opengl_shader(shader->handle, shader->tcs_filename, GL_TESS_CONTROL_SHADER))
+            error("load_opengl_shader() compiling tess control shader failed");
     }
-    
-    if (shader->tes_filename != 0) // Tessellation Evaluation Shader
+    if (shader->tes_filename != 0)
     {
-        if (!compile_opengl_shader(shader, GL_TESS_EVALUATION_SHADER))
-        {
-            error("load_opengl_shader() compiling tessellation evaluation shader failed");
-            return;
-        }
+        if (!compile_opengl_shader(shader->handle, shader->tes_filename, GL_TESS_EVALUATION_SHADER))
+            error("load_opengl_shader() compiling tess_evaluation shader failed");
     }
-    
-    if (shader->gs_filename != 0) // Geometry Shader
+    if (shader->gs_filename != 0)
     {
-        if (!compile_opengl_shader(shader, GL_GEOMETRY_SHADER))
-        {
+        if (!compile_opengl_shader(shader->handle, shader->gs_filename, GL_GEOMETRY_SHADER))
             error("load_opengl_shader() compiling geometry shader failed");
-            return;
-        }
     }
-    
-    if (shader->fs_filename != 0) // Fragment Shader
+    if (shader->fs_filename != 0)
     {
-        if (!compile_opengl_shader(shader, GL_FRAGMENT_SHADER))
-        {
+        if (!compile_opengl_shader(shader->handle, shader->fs_filename, GL_FRAGMENT_SHADER))
             error("load_opengl_shader() compiling fragment shader failed");
-            return;
-        }
     }
     
     // Link
@@ -191,7 +138,7 @@ load_opengl_shader(Shader *shader)
     glGetProgramiv(shader->handle, GL_LINK_STATUS, &linked_program);
     if (!linked_program)
     {
-        debug_opengl_program(shader->handle);
+        debug_opengl(GL_PROGRAM, shader->handle);
         error("load_opengl_shader() link failed");
         return;
     }
@@ -199,8 +146,38 @@ load_opengl_shader(Shader *shader)
     shader->compiled = true;
 }
 
+function Shader
+load_shader(const char *vs_filename,
+            const char *tcs_filename,
+            const char *tes_filename,
+            const char *gs_filename,
+            const char *fs_filename)
+{
+    Shader shader = {};
+    
+    shader.vs_filename = copy(vs_filename);
+    shader.tcs_filename = copy(tcs_filename);
+    shader.tes_filename = copy(tes_filename);
+    shader.gs_filename = copy(gs_filename);
+    shader.fs_filename = copy(fs_filename);
+    
+    load_opengl_shader(&shader);
+    
+    return shader;
+}
+
 function void
-opengl_setup_mesh(Mesh *mesh)
+reload_shader(Shader *shader)
+{
+    load_opengl_shader(shader);
+}
+
+//
+// Mesh
+//
+
+function void
+opengl_init_mesh(Mesh *mesh)
 {
     glGenVertexArrays(1, &mesh->vao);
     glGenBuffers(1, &mesh->vbo);
@@ -209,18 +186,14 @@ opengl_setup_mesh(Mesh *mesh)
     glBindVertexArray(mesh->vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
     glBufferData(GL_ARRAY_BUFFER, mesh->vertices_count * sizeof(Vertex), &mesh->vertices[0], GL_STATIC_DRAW);  
-    
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices_count * sizeof(u32), &mesh->indices[0], GL_STATIC_DRAW);
     
-    // vertex positions
-    glEnableVertexAttribArray(0);	
+    glEnableVertexAttribArray(0); // vertex positions
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    // vertex normals
-    glEnableVertexAttribArray(1);	
+    glEnableVertexAttribArray(1); // vertex normals
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-    // vertex texture coords
-    glEnableVertexAttribArray(2);	
+    glEnableVertexAttribArray(2); // vertex texture coords
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coordinate));
     
     glBindVertexArray(0);
@@ -233,6 +206,10 @@ opengl_draw_mesh(Mesh *mesh)
     glDrawElements(GL_TRIANGLES, mesh->indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
+
+//
+// Rect
+//
 
 function void
 init_rect_indices(u32 *indices, 
@@ -250,7 +227,7 @@ init_rect_indices(u32 *indices,
 }
 
 function void
-init_rect_mesh(Mesh *rect)
+create_rect_mesh(Mesh *rect)
 {
     rect->vertices_count = 4;
     rect->vertices = (Vertex*)SDL_malloc(sizeof(Vertex) * rect->vertices_count);
@@ -263,11 +240,48 @@ init_rect_mesh(Mesh *rect)
     rect->indices = (u32*)SDL_malloc(sizeof(u32) * rect->indices_count);
     init_rect_indices(rect->indices, 1, 3, 0, 2);
     
-    opengl_setup_mesh(rect);
+    opengl_init_mesh(rect);
 }
 
-function inline m4x4
-get_view(Camera camera)
+function void
+opengl_draw_rect(v2 coords, v2 dim, v4 color,
+                 Mesh *rect, Shader *shader, m4x4 projection_matrix)
 {
-    return look_at(camera.position, camera.position + camera.target, camera.up);
+    u32 handle = use_shader(shader);
+    glUniform4fv(glGetUniformLocation(handle, "user_color"), (GLsizei)1, (float*)&color);
+    m4x4 model = create_transform_m4x4({coords.x, coords.y, 0}, get_rotation(0, {1, 0, 0}), {dim.x, dim.y, 1.0f});
+    glUniformMatrix4fv(glGetUniformLocation(handle, "model"), (GLsizei)1, false, (float*)&model);
+    glUniformMatrix4fv(glGetUniformLocation(handle, "projection"), (GLsizei)1, false, (float*)&projection_matrix);
+    opengl_draw_mesh(rect);
+}
+
+function void
+opengl_draw_rect(v3 coords, quat rotation, v3 dim, v4 color,
+                 Mesh *rect, Shader *shader, m4x4 projection_matrix, m4x4 view_matrix)
+{
+    u32 handle = use_shader(shader);
+    glUniform4fv(glGetUniformLocation(handle, "user_color"), (GLsizei)1, (float*)&color);
+    m4x4 model = create_transform_m4x4(coords, rotation, dim);
+    glUniformMatrix4fv(glGetUniformLocation(handle, "model"), (GLsizei)1, false, (float*)&model);
+    glUniformMatrix4fv(glGetUniformLocation(handle, "projection"), (GLsizei)1, false, (float*)&projection_matrix);
+    glUniformMatrix4fv(glGetUniformLocation(handle, "view"), (GLsizei)1, false, (float*)&view_matrix);
+    opengl_draw_mesh(rect);
+}
+
+function void
+opengl_draw_rect(v2 coords, v2 dim, Bitmap *bitmap,
+                 Mesh *rect, Shader *shader, m4x4 projection_matrix)
+{
+    
+    
+    u32 handle = use_shader(shader);
+    m4x4 model = create_transform_m4x4({coords.x, coords.y, 0}, get_rotation(0, {1, 0, 0}), {dim.x, dim.y, 1.0f});
+    glUniformMatrix4fv(glGetUniformLocation(handle, "model"), (GLsizei)1, false, (float*)&model);
+    glUniformMatrix4fv(glGetUniformLocation(handle, "projection"), (GLsizei)1, false, (float*)&projection_matrix);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, bitmap->handle);
+    glUniform1i(glGetUniformLocation(handle, "tex0"), 0);
+    
+    opengl_draw_mesh(rect);
 }
